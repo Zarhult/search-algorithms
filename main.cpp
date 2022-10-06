@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 
+const bool primitive_test = true; // Whether or not to run the lazy cout tests
+
 struct edge {
     // An edge from A to B may not have the same cost as B to A (not interchangeable)
     const std::string start_state = "";
@@ -18,19 +20,35 @@ struct heuristic_data {
 class node {
 private:
     const std::string state; // State that this node corresponds to
-    const std::vector<edge> edges; // All edges from this node to another, with path cost
     const unsigned heuristic; // Heuristic value of this node
+    std::vector<edge> edges; // All edges from this node to another, with path cost
 public:
-    node(std::string s, std::vector<edge> e, unsigned h)
-        : state(s), edges(e), heuristic(h) { };
+    node(std::string s, unsigned h, std::vector<edge> e)
+        : state(s), heuristic(h), edges(e) { };
 
     std::string getState() { return state; };
     edge getEdge(unsigned i) { return edges.at(i); };
+    unsigned getEdgeCount() { return edges.size(); };
     unsigned getHeuristic() { return heuristic; };
+
+    void addEdge(edge e) { edges.push_back(e); };
 };
 
 std::string delTrailingWhitespace(std::string &input) {
     return input.substr(0, input.find_last_not_of(" ") + 1);
+}
+
+int getHeuristicFromVector(std::string state, std::vector<heuristic_data> data) {
+    for (int i = 0; i < data.size(); ++i) {
+        if (data.at(i).state == state) {
+            return data.at(i).value;
+        }
+    }
+
+    // Failure
+    std::cerr << "Failed to find heuristic information for a node of state " << state
+              << std::endl;
+    return -1;
 }
 
 int main() {
@@ -98,24 +116,98 @@ int main() {
         sunday_traffic_data.push_back(d);
     }
 
-    // test
-    /*
-    for (int i = 0; i < live_traffic_data.size(); ++i) {
-        std::cout << live_traffic_data.at(i).start_state << std::endl
-                  << live_traffic_data.at(i).end_state << std::endl
-                  << live_traffic_data.at(i).cost << std::endl;
+    // Test that the data was read correctly
+    if (primitive_test) {
+        std::cout << "Edges: " << std::endl;
+        for (int i = 0; i < live_traffic_data.size(); ++i) {
+            std::cout << "From " << live_traffic_data.at(i).start_state
+                      << " to " << live_traffic_data.at(i).end_state
+                      << " with cost " << live_traffic_data.at(i).cost
+                      << std::endl;
+        }
+        std::cout << "Heuristics: " << std::endl;
+        for (int i = 0; i < sunday_traffic_data.size(); ++i) {
+            std::cout << "Heuristic of state " << sunday_traffic_data.at(i).state
+                      << " is " << sunday_traffic_data.at(i).value << std::endl;
+        }
+        std::cout << std::endl;
     }
 
-    for (int i = 0; i < sunday_traffic_data.size(); ++i) {
-        std::cout << sunday_traffic_data.at(i).state << std::endl
-                  << sunday_traffic_data.at(i).value << std::endl;
-    }
-    */
-
-    // All data has been collected, won't need input file again
+    // All data has been read, won't need input file again
     ifs.close();
 
     /* Generate the graph using all the provided data */
+    // First all nodes that have edges leading away from them
+    std::vector<node> graph;
+    for (int i = 0; i < live_traffic_data.size(); ++i) {
+        const std::string node_state = live_traffic_data.at(i).start_state;
+
+        // Does a node at the start of this edge already exist?
+        bool node_already_exists = false;
+        int existing_node_index = -1;
+        for (int j = 0; j < graph.size(); ++j) {
+            if (graph.at(j).getState() == node_state) {
+                node_already_exists = true;
+                existing_node_index = j;
+            }
+        }
+
+        if (node_already_exists) { // If so, just add this edge to the existing node
+            graph.at(existing_node_index).addEdge(live_traffic_data.at(i));
+        } else { // Otherwise, create new node with this edge
+            // Have to set the heuristic value while creating a new node
+            const int h = getHeuristicFromVector(node_state, sunday_traffic_data);
+            std::vector<edge> e;
+            e.push_back(live_traffic_data.at(i));
+
+            node n(node_state, h, e);
+            graph.push_back(n);
+        }
+    }
+    // Now go through and add the node(s) that only exist at the ends of edges, if any
+    for (int i = 0; i < live_traffic_data.size(); ++i) {
+        const std::string node_state = live_traffic_data.at(i).end_state;
+
+        // Does the node at the end of this edge already exist?
+        bool node_already_exists = false;
+        for (int j = 0; j < graph.size(); ++j) {
+            if (graph.at(j).getState() == node_state) {
+                node_already_exists = true;
+            }
+        }
+
+        // If not, it must be a node with no edges leaving it, since already added the rest
+        if (!node_already_exists) {
+            const int h = getHeuristicFromVector(node_state, sunday_traffic_data);
+            std::vector<edge> e; // Leave vector empty since this node has no edges
+
+            node n(node_state, h, e);
+            graph.push_back(n);
+        }
+    }
+
+    // Test that the graph is constructed correctly
+    if (primitive_test) {
+        std::cout << "Graph vector: " << std::endl;
+        for (int i = 0; i < graph.size(); ++i) {
+            std::cout << "Node: " << graph.at(i).getState()
+                      << ", Heuristic: " << graph.at(i).getHeuristic() << std::endl;
+
+            std::cout << "Edges: " << std::endl;
+
+            unsigned edgeCount = graph.at(i).getEdgeCount();
+            if (edgeCount > 0) {
+                for (int j = 0; j < graph.at(i).getEdgeCount(); ++j) {
+                    std::cout << "From " << graph.at(i).getEdge(j).start_state
+                              << " to " << graph.at(i).getEdge(j).end_state
+                              << " with cost " << graph.at(i).getEdge(j).cost
+                              << std::endl;
+                }
+            } else {
+                std::cout << "None." << std::endl;
+            }
+        }
+    }
 
     /* Apply the specified algorithm and find out the solution */
 
