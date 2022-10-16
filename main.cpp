@@ -37,7 +37,8 @@ public:
     std::string getPathMember(unsigned i) { return path.at(i); };
     unsigned getPathSize() { return path.size(); };
     unsigned getCostsMember(unsigned i) { return costs.at(i); };
-    unsigned getCostsSize() {return costs.size(); };
+    unsigned getCostsSize() { return costs.size(); };
+    unsigned getTotalCost() { return costs.at(costs.size() - 1); };
 
     void addEdge(edge e) { edges.push_back(e); };
     void addToPath(std::string s) { path.push_back(s); };
@@ -82,11 +83,13 @@ node BFS(std::vector<node> graph, unsigned start_index, unsigned goal_index) {
     frontier.push_front(start_index); // Initial state of frontier is just the start node
 
     // Initialize start state's path and costs vectors
+    graph.at(start_index).clearPath();
     graph.at(start_index).addToPath(graph.at(start_index).getState());
+    graph.at(start_index).clearCosts();
     graph.at(start_index).addToCosts(0);
 
     while (!frontier.empty()) {
-        unsigned n = frontier.front();
+        unsigned n = frontier.front(); // FIFO
         frontier.pop_front();
 
         // Goal test
@@ -108,7 +111,7 @@ node BFS(std::vector<node> graph, unsigned start_index, unsigned goal_index) {
             bool already_in_frontier = std::find(frontier.begin(), frontier.end(),
                                                  child_state_index) != frontier.end();
             if (!already_in_explored && !already_in_frontier) {
-                // Set child's path vector to the parent's
+                // Set child's path and cost vectors to the parent's
                 graph.at(child_state_index).clearPath();
                 for (int j = 0; j < graph.at(n).getPathSize(); ++j) {
                     graph.at(child_state_index).addToPath(graph.at(n).getPathMember(j));
@@ -135,12 +138,277 @@ node BFS(std::vector<node> graph, unsigned start_index, unsigned goal_index) {
     return node("", 0); // Represent failure as a stateless node
 }
 
+/* Exact same as BFS except frontier is LIFO */
 node DFS(std::vector<node> graph, unsigned start_index, unsigned goal_index) {
+    // Frontier and explored contain indices of nodes
+    std::deque<unsigned> frontier; // Need deque to be able to search the frontier easily
+    std::vector<unsigned> explored;
+    frontier.push_front(start_index); // Initial state of frontier is just the start node
 
+    // Initialize start state's path and costs vectors
+    graph.at(start_index).clearPath();
+    graph.at(start_index).addToPath(graph.at(start_index).getState());
+    graph.at(start_index).clearCosts();
+    graph.at(start_index).addToCosts(0);
+
+    while (!frontier.empty()) {
+        unsigned n = frontier.back(); // LIFO
+        frontier.pop_back();
+
+        // Goal test
+        if (n == goal_index) {
+            return graph.at(n);
+        }
+
+        explored.push_back(n);
+
+        // Tie break: edge that appears earliest in input file (lowest index in node.edges)
+        // is enqueued first
+        for (int i = 0; i < graph.at(n).getEdgeCount(); ++i) {
+            std::string child_state = graph.at(n).getEdge(i).end_state;
+            unsigned child_state_index = getIndexOfState(graph, child_state);
+
+            // Ignore children that are already in explored or frontier
+            bool already_in_explored = std::find(explored.begin(), explored.end(),
+                                                 child_state_index) != explored.end();
+            bool already_in_frontier = std::find(frontier.begin(), frontier.end(),
+                                                 child_state_index) != frontier.end();
+            if (!already_in_explored && !already_in_frontier) {
+                // Set child's path and cost vectors to the parent's
+                graph.at(child_state_index).clearPath();
+                for (int j = 0; j < graph.at(n).getPathSize(); ++j) {
+                    graph.at(child_state_index).addToPath(graph.at(n).getPathMember(j));
+                }
+                graph.at(child_state_index).clearCosts();
+                for (int j = 0; j < graph.at(n).getCostsSize(); ++j) {
+                    graph.at(child_state_index).addToCosts(graph.at(n).getCostsMember(j));
+                }
+
+                // Now update path/costs to account for the transition from parent to child
+                graph.at(child_state_index).addToPath(child_state);
+                unsigned parentCost =
+                    graph.at(n).getCostsMember(graph.at(n).getCostsSize() - 1);
+                graph.at(child_state_index).addToCosts(parentCost
+                                                       + graph.at(n).getEdge(i).cost);
+
+                // Finally add the child to the frontier
+                frontier.push_back(child_state_index);
+            }
+        }
+    }
+
+    // Only reach this line if fail to find a solution in the loop, so return failure
+    return node("", 0); // Represent failure as a stateless node
 }
 
 node UCS(std::vector<node> graph, unsigned start_index, unsigned goal_index) {
-    return graph.at(0);
+    // Frontier and explored contain indices of nodes
+    // For convenience, store frontier in descending order of path costs and treat
+    // the last element as the front of the frontier, so that we can pop that element
+    // with pop_back
+    std::vector<unsigned> frontier;
+    std::vector<unsigned> explored;
+    frontier.push_back(start_index); // Initial state of frontier is just the start node
+
+    // Initialize start state's path and costs vectors
+    graph.at(start_index).clearPath();
+    graph.at(start_index).addToPath(graph.at(start_index).getState());
+    graph.at(start_index).clearCosts();
+    graph.at(start_index).addToCosts(0);
+
+    while (!frontier.empty()) {
+        unsigned n = frontier.back();
+        frontier.pop_back();
+
+        // Goal test
+        if (n == goal_index) {
+            return graph.at(n);
+        }
+
+        explored.push_back(n);
+
+        // Create vector of the children indices first
+        std::vector<unsigned> children;
+        for (int i = 0; i < graph.at(n).getEdgeCount(); ++i) {
+            std::string child_state = graph.at(n).getEdge(i).end_state;
+            unsigned child_state_index = getIndexOfState(graph, child_state);
+
+            if (primitive_test) {
+                std::cout << std::endl << "Checking "
+                          << graph.at(n).getState() << "'s child "
+                          << graph.at(child_state_index).getState() << std::endl;
+            }
+
+            // Ignore children that are already in explored
+            bool already_in_explored = std::find(explored.begin(), explored.end(),
+                                                 child_state_index) != explored.end();
+
+            if (primitive_test) {
+                std::cout << child_state << " is already in explored?: "
+                          << already_in_explored << std::endl;
+            }
+
+            if (!already_in_explored) {
+                auto child_in_frontier = std::find(frontier.begin(), frontier.end(),
+                                                   child_state_index);
+                // Node already exists in frontier?
+                bool already_in_frontier = child_in_frontier != frontier.end();
+
+                if (primitive_test) {
+                    std::cout << child_state << " is already in frontier?: "
+                              << already_in_frontier << std::endl;
+                }
+
+                // Node with lower/equal path cost already exists in frontier?
+                bool already_in_frontier_better = false;
+                unsigned parent_cost = graph.at(n).getTotalCost();
+                unsigned new_cost = parent_cost + graph.at(n).getEdge(i).cost;
+                if (already_in_frontier) {
+                    unsigned old_cost = graph.at(child_state_index).getTotalCost();
+                    if (old_cost <= new_cost) {
+                        already_in_frontier_better = true;
+                    }
+                }
+
+                if (primitive_test) {
+                    std::cout << child_state
+                              << " is already in frontier with a better/equal path cost?: "
+                              << already_in_frontier_better << std::endl;
+                }
+
+                // Ignore children that do not improve over what is already in the frontier
+                if (!already_in_frontier_better) {
+                    if (already_in_frontier) {
+                        std:: cout << "Deleting inferior path " << child_state
+                                   << " from frontier" << std::endl;
+                        // Child is already in frontier but inferior to what we just found,
+                        // so we have to remove it before we add the new child.
+                        frontier.erase(child_in_frontier);
+                    }
+
+                    // Set child's path and cost vectors to the parent's
+                    graph.at(child_state_index).clearPath();
+                    for (int j = 0; j < graph.at(n).getPathSize(); ++j) {
+                        graph.at(child_state_index).addToPath(graph.at(n).getPathMember(j));
+                    }
+                    graph.at(child_state_index).clearCosts();
+                    for (int j = 0; j < graph.at(n).getCostsSize(); ++j) {
+                        graph.at(child_state_index).addToCosts(graph.at(n).getCostsMember(j));
+                    }
+
+                    // Now update path/costs to account for the transition from
+                    // parent to child
+                    graph.at(child_state_index).addToPath(child_state);
+                    graph.at(child_state_index).addToCosts(parent_cost +
+                                                           graph.at(n).getEdge(i).cost);
+
+                    if (primitive_test) {
+                        std::cout << "Path of " << child_state << " is ";
+                        for (int j = 0; j < graph.at(child_state_index).getPathSize(); ++j) {
+                            std::cout << graph.at(child_state_index).getPathMember(j) << " ";
+                        }
+                        std::cout << std::endl;
+
+                        std::cout << "Costs of " << child_state << " are ";
+                        for (int j = 0; j < graph.at(child_state_index).getCostsSize(); ++j) {
+                            std::cout << graph.at(child_state_index).getCostsMember(j) << " ";
+                        }
+                        std::cout << std::endl;
+                    }
+
+                    // Finally, we can add the child to the children vector for handling
+                    children.push_back(child_state_index);
+                }
+            }
+        }
+
+        if (primitive_test) {
+            if (children.size() > 0) {
+                std::cout << std::endl << "Children vector is ";
+                for (int i = 0; i < children.size(); ++i) {
+                    std::cout << graph.at(children.at(i)).getState() << " ";
+                }
+                std::cout << std::endl;
+            } else {
+                std::cout << std::endl << "Children vector is empty"
+                          << " (none of this node's children need to be added to frontier)"
+                          << std::endl;
+            }
+        }
+
+        // Still have to handle tie breaks: if multiple children have the same cost, insert
+        // them in the order they appear in the input file, and if inserting a child with
+        // equal path cost to a node that already exists in the frontier,
+        // enqueue the child right after that node.
+        for (int i = 0; i < children.size(); ++i) {
+            unsigned child_cost = graph.at(children.at(i)).getTotalCost();
+            // Vector of indices in the children vector that this child ties with
+            std::vector<unsigned> children_vector_tie_indices;
+            for (int j = 0; j < children.size(); ++j) {
+                if (j != i && child_cost == graph.at(children.at(j)).getTotalCost()) {
+                    children_vector_tie_indices.push_back(j);
+                }
+            }
+
+            if (primitive_test) {
+                if (children_vector_tie_indices.size() > 0) {
+                    std::cout << std::endl << "Found ties: ";
+                    for (int j = 0; j < children_vector_tie_indices.size(); ++j) {
+                        std::cout <<
+                            graph.at(children_vector_tie_indices.at(j)).getState() << " ";
+                    }
+                }
+                std::cout << std::endl;
+            }
+
+            // Find where the child and the children it ties with, if any, should be
+            // inserted. Insert at end of vector (front of frontier) if fail to find
+            // any nodes in frontier with cost less than or equal to the child's cost
+            unsigned child_insert_position = frontier.size();
+            bool found_insert_position = false;
+            for (int j = 0; j < frontier.size() && !found_insert_position; ++j) {
+                if (graph.at(frontier.at(j)).getTotalCost() <= child_cost) {
+                    child_insert_position = j;
+                    found_insert_position = true;
+                }
+            }
+
+            if (primitive_test) {
+                std::cout << "Frontier before adding child "
+                          << graph.at(children.at(i)).getState() << " and ties: ";
+                for (int j = 0; j < frontier.size(); ++j) {
+                    std::cout << graph.at(frontier.at(j)).getState() << " ";
+                }
+                std::cout << std::endl;
+            }
+
+            // Add the children to the frontier. For ties, the node earliest in the
+            // input file (= lowest index in children vector) goes closest to the front
+            // of the frontier (front of frontier = last element, which has lowest cost)
+            frontier.insert(frontier.begin()+child_insert_position, children.at(i));
+            for (int j = 0; j < children_vector_tie_indices.size(); ++j) {
+                frontier.insert(frontier.begin()+child_insert_position, children.at(j));
+            }
+
+            if (primitive_test) {
+                std::cout << "Frontier after adding child "
+                          << graph.at(children.at(i)).getState() << " and ties: ";
+                for (int j = 0; j < frontier.size(); ++j) {
+                    std::cout << graph.at(frontier.at(j)).getState() << " ";
+                }
+                std::cout << std::endl;
+            }
+
+            // Delete the children that tied from the children vector, so they aren't
+            // added a second time
+            for (int j = 0; j < children_vector_tie_indices.size(); ++j) {
+                children.erase(children.begin()+children_vector_tie_indices.at(j));
+            }
+        }
+    }
+
+    // Only reach this line if fail to find a solution in the loop, so return failure
+    return node("", 0); // Represent failure as a stateless node
 }
 
 node A_STAR(std::vector<node> graph, unsigned start_index, unsigned goal_index) {
@@ -333,7 +601,7 @@ int main() {
 
     if (primitive_test) {
         std::cout << "Found solution node of state " << solution.getState()
-                  << "." << std::endl;
+                  << " using " << algo << std::endl;
 
         std::cout << "Solution path is: " << std::endl;
         for (int i = 0; i < solution.getPathSize(); ++i) {
