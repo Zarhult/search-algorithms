@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <deque>
 
-const bool primitive_test = true; // Whether or not to run the lazy cout tests
+const bool primitive_test = false; // Whether or not to run the lazy cout tests
 
 struct edge {
     // An edge from A to B may not have the same cost as B to A (not interchangeable)
@@ -280,8 +280,10 @@ node UCS(std::vector<node> graph, unsigned start_index, unsigned goal_index) {
                 // Ignore children that do not improve over what is already in the frontier
                 if (!already_in_frontier_better) {
                     if (already_in_frontier) {
-                        std:: cout << "Deleting inferior path " << child_state
-                                   << " from frontier" << std::endl;
+                        if (primitive_test) {
+                            std:: cout << "Deleting inferior path " << child_state
+                                       << " from frontier" << std::endl;
+                        }
                         // Child is already in frontier but inferior to what we just found,
                         // so we have to remove it before we add the new child.
                         frontier.erase(child_in_frontier);
@@ -502,8 +504,10 @@ node A_STAR(std::vector<node> graph, unsigned start_index, unsigned goal_index) 
                 // Ignore children that do not improve over what is already in the frontier
                 if (!already_in_frontier_better) {
                     if (already_in_frontier) {
-                        std:: cout << "Deleting inferior path " << child_state
-                                   << " from frontier" << std::endl;
+                        if (primitive_test) {
+                            std:: cout << "Deleting inferior path " << child_state
+                                       << " from frontier" << std::endl;
+                        }
                         // Child is already in frontier but inferior to what we just found,
                         // so we have to remove it before we add the new child.
                         frontier.erase(child_in_frontier);
@@ -839,6 +843,15 @@ int main() {
     }
 
     /* Output the solution to output.txt */
+    std::string const output_filename = "output.txt";
+    std::ofstream ofs(output_filename, std::ios::out);
+
+    for (int i = 0; i < solution.getPathSize(); ++i) {
+        ofs << solution.getPathMember(i) << " "
+            << solution.getCostsMember(i) << std::endl;
+    }
+
+    ofs.close();
 
     return 0;
 }
