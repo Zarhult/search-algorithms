@@ -53,7 +53,7 @@ std::string delTrailingWhitespace(std::string &input) {
 }
 
 int getHeuristicFromVector(std::string state, std::vector<heuristic_data> data) {
-    for (int i = 0; i < data.size(); ++i) {
+    for (unsigned i = 0; i < data.size(); ++i) {
         if (data.at(i).state == state) {
             return data.at(i).value;
         }
@@ -66,7 +66,7 @@ int getHeuristicFromVector(std::string state, std::vector<heuristic_data> data) 
 }
 
 int getIndexOfState(std::vector<node> graph, std::string state) {
-    for (int i = 0; i < graph.size(); ++i) {
+    for (unsigned i = 0; i < graph.size(); ++i) {
         if (graph.at(i).getState() == state) {
             return i;
         }
@@ -102,7 +102,7 @@ node BFS(std::vector<node> graph, unsigned start_index, unsigned goal_index) {
 
         // Tie break: edge that appears earliest in input file (lowest index in node.edges)
         // is enqueued first
-        for (int i = 0; i < graph.at(n).getEdgeCount(); ++i) {
+        for (unsigned i = 0; i < graph.at(n).getEdgeCount(); ++i) {
             std::string child_state = graph.at(n).getEdge(i).end_state;
             unsigned child_state_index = getIndexOfState(graph, child_state);
 
@@ -114,11 +114,11 @@ node BFS(std::vector<node> graph, unsigned start_index, unsigned goal_index) {
             if (!already_in_explored && !already_in_frontier) {
                 // Set child's path and cost vectors to the parent's
                 graph.at(child_state_index).clearPath();
-                for (int j = 0; j < graph.at(n).getPathSize(); ++j) {
+                for (unsigned j = 0; j < graph.at(n).getPathSize(); ++j) {
                     graph.at(child_state_index).addToPath(graph.at(n).getPathMember(j));
                 }
                 graph.at(child_state_index).clearCosts();
-                for (int j = 0; j < graph.at(n).getCostsSize(); ++j) {
+                for (unsigned j = 0; j < graph.at(n).getCostsSize(); ++j) {
                     graph.at(child_state_index).addToCosts(graph.at(n).getCostsMember(j));
                 }
 
@@ -165,7 +165,7 @@ node DFS(std::vector<node> graph, unsigned start_index, unsigned goal_index) {
 
         // Tie break: edge that appears earliest in input file (lowest index in node.edges)
         // is enqueued first
-        for (int i = 0; i < graph.at(n).getEdgeCount(); ++i) {
+        for (unsigned i = 0; i < graph.at(n).getEdgeCount(); ++i) {
             std::string child_state = graph.at(n).getEdge(i).end_state;
             unsigned child_state_index = getIndexOfState(graph, child_state);
 
@@ -177,11 +177,11 @@ node DFS(std::vector<node> graph, unsigned start_index, unsigned goal_index) {
             if (!already_in_explored && !already_in_frontier) {
                 // Set child's path and cost vectors to the parent's
                 graph.at(child_state_index).clearPath();
-                for (int j = 0; j < graph.at(n).getPathSize(); ++j) {
+                for (unsigned j = 0; j < graph.at(n).getPathSize(); ++j) {
                     graph.at(child_state_index).addToPath(graph.at(n).getPathMember(j));
                 }
                 graph.at(child_state_index).clearCosts();
-                for (int j = 0; j < graph.at(n).getCostsSize(); ++j) {
+                for (unsigned j = 0; j < graph.at(n).getCostsSize(); ++j) {
                     graph.at(child_state_index).addToCosts(graph.at(n).getCostsMember(j));
                 }
 
@@ -230,7 +230,7 @@ node UCS(std::vector<node> graph, unsigned start_index, unsigned goal_index) {
 
         // Create vector of the children indices first
         std::vector<unsigned> children;
-        for (int i = 0; i < graph.at(n).getEdgeCount(); ++i) {
+        for (unsigned i = 0; i < graph.at(n).getEdgeCount(); ++i) {
             std::string child_state = graph.at(n).getEdge(i).end_state;
             unsigned child_state_index = getIndexOfState(graph, child_state);
 
@@ -291,11 +291,11 @@ node UCS(std::vector<node> graph, unsigned start_index, unsigned goal_index) {
 
                     // Set child's path and cost vectors to the parent's
                     graph.at(child_state_index).clearPath();
-                    for (int j = 0; j < graph.at(n).getPathSize(); ++j) {
+                    for (unsigned j = 0; j < graph.at(n).getPathSize(); ++j) {
                         graph.at(child_state_index).addToPath(graph.at(n).getPathMember(j));
                     }
                     graph.at(child_state_index).clearCosts();
-                    for (int j = 0; j < graph.at(n).getCostsSize(); ++j) {
+                    for (unsigned j = 0; j < graph.at(n).getCostsSize(); ++j) {
                         unsigned cost = graph.at(n).getCostsMember(j);
                         graph.at(child_state_index).addToCosts(cost);
                     }
@@ -308,14 +308,15 @@ node UCS(std::vector<node> graph, unsigned start_index, unsigned goal_index) {
 
                     if (primitive_test) {
                         std::cout << "Path of " << child_state << " is ";
-                        for (int j = 0; j < graph.at(child_state_index).getPathSize(); ++j) {
+                        unsigned pathSize = graph.at(child_state_index).getPathSize();
+                        for (unsigned j = 0; j < pathSize; ++j) {
                             std::cout << graph.at(child_state_index).getPathMember(j) << " ";
                         }
                         std::cout << std::endl;
 
                         std::cout << "Costs of " << child_state << " are ";
                         unsigned costs_size = graph.at(child_state_index).getCostsSize();
-                        for (int j = 0; j < costs_size; ++j) {
+                        for (unsigned j = 0; j < costs_size; ++j) {
                             std::cout << graph.at(child_state_index).getCostsMember(j)
                                       << " ";
                         }
@@ -331,7 +332,7 @@ node UCS(std::vector<node> graph, unsigned start_index, unsigned goal_index) {
         if (primitive_test) {
             if (children.size() > 0) {
                 std::cout << std::endl << "Children vector is ";
-                for (int i = 0; i < children.size(); ++i) {
+                for (unsigned i = 0; i < children.size(); ++i) {
                     std::cout << graph.at(children.at(i)).getState() << " ";
                 }
                 std::cout << std::endl;
@@ -346,11 +347,11 @@ node UCS(std::vector<node> graph, unsigned start_index, unsigned goal_index) {
         // them in the order they appear in the input file, and if inserting a child with
         // equal path cost to a node that already exists in the frontier,
         // enqueue the child right after that node.
-        for (int i = 0; i < children.size(); ++i) {
+        for (unsigned i = 0; i < children.size(); ++i) {
             unsigned child_cost = graph.at(children.at(i)).getTotalCost();
             // Vector of indices in the children vector that this child ties with
             std::vector<unsigned> children_vector_tie_indices;
-            for (int j = 0; j < children.size(); ++j) {
+            for (unsigned j = 0; j < children.size(); ++j) {
                 if (j != i && child_cost == graph.at(children.at(j)).getTotalCost()) {
                     children_vector_tie_indices.push_back(j);
                 }
@@ -359,7 +360,7 @@ node UCS(std::vector<node> graph, unsigned start_index, unsigned goal_index) {
             if (primitive_test) {
                 if (children_vector_tie_indices.size() > 0) {
                     std::cout << std::endl << "Found ties: ";
-                    for (int j = 0; j < children_vector_tie_indices.size(); ++j) {
+                    for (unsigned j = 0; j < children_vector_tie_indices.size(); ++j) {
                         unsigned tie_children_index = children_vector_tie_indices.at(j);
                         unsigned tie_graph_index = children.at(tie_children_index);
                         std::cout << graph.at(tie_graph_index).getState() << " ";
@@ -373,7 +374,7 @@ node UCS(std::vector<node> graph, unsigned start_index, unsigned goal_index) {
             // any nodes in frontier with cost less than or equal to the child's cost
             unsigned child_insert_position = frontier.size();
             bool found_insert_position = false;
-            for (int j = 0; j < frontier.size() && !found_insert_position; ++j) {
+            for (unsigned j = 0; j < frontier.size() && !found_insert_position; ++j) {
                 if (graph.at(frontier.at(j)).getTotalCost() <= child_cost) {
                     child_insert_position = j;
                     found_insert_position = true;
@@ -383,7 +384,7 @@ node UCS(std::vector<node> graph, unsigned start_index, unsigned goal_index) {
             if (primitive_test) {
                 std::cout << "Frontier before adding child "
                           << graph.at(children.at(i)).getState() << " and ties: ";
-                for (int j = 0; j < frontier.size(); ++j) {
+                for (unsigned j = 0; j < frontier.size(); ++j) {
                     std::cout << graph.at(frontier.at(j)).getState() << " ";
                 }
                 std::cout << std::endl;
@@ -393,7 +394,7 @@ node UCS(std::vector<node> graph, unsigned start_index, unsigned goal_index) {
             // input file (= lowest index in children vector) goes closest to the front
             // of the frontier (front of frontier = last element, which has lowest cost)
             frontier.insert(frontier.begin()+child_insert_position, children.at(i));
-            for (int j = 0; j < children_vector_tie_indices.size(); ++j) {
+            for (unsigned j = 0; j < children_vector_tie_indices.size(); ++j) {
                 unsigned tie_children_index = children_vector_tie_indices.at(j);
                 unsigned tie_graph_index = children.at(tie_children_index);
                 frontier.insert(frontier.begin()+child_insert_position, tie_graph_index);
@@ -402,7 +403,7 @@ node UCS(std::vector<node> graph, unsigned start_index, unsigned goal_index) {
             if (primitive_test) {
                 std::cout << "Frontier after adding child "
                           << graph.at(children.at(i)).getState() << " and ties: ";
-                for (int j = 0; j < frontier.size(); ++j) {
+                for (unsigned j = 0; j < frontier.size(); ++j) {
                     std::cout << graph.at(frontier.at(j)).getState() << " ";
                 }
                 std::cout << std::endl;
@@ -410,7 +411,7 @@ node UCS(std::vector<node> graph, unsigned start_index, unsigned goal_index) {
 
             // Delete the children that tied from the children vector, so they aren't
             // added a second time
-            for (int j = 0; j < children_vector_tie_indices.size(); ++j) {
+            for (unsigned j = 0; j < children_vector_tie_indices.size(); ++j) {
                 children.erase(children.begin()+children_vector_tie_indices.at(j));
             }
         }
@@ -450,7 +451,7 @@ node A_STAR(std::vector<node> graph, unsigned start_index, unsigned goal_index) 
 
         // Create vector of the children indices first
         std::vector<unsigned> children;
-        for (int i = 0; i < graph.at(n).getEdgeCount(); ++i) {
+        for (unsigned i = 0; i < graph.at(n).getEdgeCount(); ++i) {
             std::string child_state = graph.at(n).getEdge(i).end_state;
             unsigned child_state_index = getIndexOfState(graph, child_state);
 
@@ -515,11 +516,11 @@ node A_STAR(std::vector<node> graph, unsigned start_index, unsigned goal_index) 
 
                     // Set child's path and cost vectors to the parent's
                     graph.at(child_state_index).clearPath();
-                    for (int j = 0; j < graph.at(n).getPathSize(); ++j) {
+                    for (unsigned j = 0; j < graph.at(n).getPathSize(); ++j) {
                         graph.at(child_state_index).addToPath(graph.at(n).getPathMember(j));
                     }
                     graph.at(child_state_index).clearCosts();
-                    for (int j = 0; j < graph.at(n).getCostsSize(); ++j) {
+                    for (unsigned j = 0; j < graph.at(n).getCostsSize(); ++j) {
                         unsigned cost = graph.at(n).getCostsMember(j);
                         graph.at(child_state_index).addToCosts(cost);
                     }
@@ -532,14 +533,15 @@ node A_STAR(std::vector<node> graph, unsigned start_index, unsigned goal_index) 
 
                     if (primitive_test) {
                         std::cout << "Path of " << child_state << " is ";
-                        for (int j = 0; j < graph.at(child_state_index).getPathSize(); ++j) {
+                        unsigned pathSize = graph.at(child_state_index).getPathSize();
+                        for (unsigned j = 0; j < pathSize; ++j) {
                             std::cout << graph.at(child_state_index).getPathMember(j) << " ";
                         }
                         std::cout << std::endl;
 
                         std::cout << "Costs of " << child_state << " are ";
                         unsigned costs_size = graph.at(child_state_index).getCostsSize();
-                        for (int j = 0; j < costs_size; ++j) {
+                        for (unsigned j = 0; j < costs_size; ++j) {
                             std::cout << graph.at(child_state_index).getCostsMember(j)
                                       << " ";
                         }
@@ -555,7 +557,7 @@ node A_STAR(std::vector<node> graph, unsigned start_index, unsigned goal_index) 
         if (primitive_test) {
             if (children.size() > 0) {
                 std::cout << std::endl << "Children vector is ";
-                for (int i = 0; i < children.size(); ++i) {
+                for (unsigned i = 0; i < children.size(); ++i) {
                     std::cout << graph.at(children.at(i)).getState() << " ";
                 }
                 std::cout << std::endl;
@@ -570,11 +572,11 @@ node A_STAR(std::vector<node> graph, unsigned start_index, unsigned goal_index) 
         // them in the order they appear in the input file, and if inserting a child with
         // equal evaluation cost to a node that already exists in the frontier,
         // enqueue the child right after that node.
-        for (int i = 0; i < children.size(); ++i) {
+        for (unsigned i = 0; i < children.size(); ++i) {
             unsigned child_evaluation_cost = graph.at(children.at(i)).getEvaluationCost();
             // Vector of indices in the children vector that this child ties with
             std::vector<unsigned> children_vector_tie_indices;
-            for (int j = 0; j < children.size(); ++j) {
+            for (unsigned j = 0; j < children.size(); ++j) {
                 unsigned evaluation_cost = graph.at(children.at(j)).getEvaluationCost();
                 bool tie = (child_evaluation_cost == evaluation_cost);
                 if (j != i && tie) {
@@ -585,7 +587,7 @@ node A_STAR(std::vector<node> graph, unsigned start_index, unsigned goal_index) 
             if (primitive_test) {
                 if (children_vector_tie_indices.size() > 0) {
                     std::cout << std::endl << "Found ties: ";
-                    for (int j = 0; j < children_vector_tie_indices.size(); ++j) {
+                    for (unsigned j = 0; j < children_vector_tie_indices.size(); ++j) {
                         unsigned tie_children_index = children_vector_tie_indices.at(j);
                         unsigned tie_graph_index = children.at(tie_children_index);
                         std::cout << graph.at(tie_graph_index).getState() << " ";
@@ -599,7 +601,7 @@ node A_STAR(std::vector<node> graph, unsigned start_index, unsigned goal_index) 
             // any nodes in frontier with cost less than or equal to the child's cost
             unsigned child_insert_position = frontier.size();
             bool found_insert_position = false;
-            for (int j = 0; j < frontier.size() && !found_insert_position; ++j) {
+            for (unsigned j = 0; j < frontier.size() && !found_insert_position; ++j) {
                 if (graph.at(frontier.at(j)).getEvaluationCost() <= child_evaluation_cost) {
                     child_insert_position = j;
                     found_insert_position = true;
@@ -609,7 +611,7 @@ node A_STAR(std::vector<node> graph, unsigned start_index, unsigned goal_index) 
             if (primitive_test) {
                 std::cout << "Frontier before adding child "
                           << graph.at(children.at(i)).getState() << " and ties: ";
-                for (int j = 0; j < frontier.size(); ++j) {
+                for (unsigned j = 0; j < frontier.size(); ++j) {
                     std::cout << graph.at(frontier.at(j)).getState() << " ";
                 }
                 std::cout << std::endl;
@@ -619,7 +621,7 @@ node A_STAR(std::vector<node> graph, unsigned start_index, unsigned goal_index) 
             // input file (= lowest index in children vector) goes closest to the front
             // of the frontier (front of frontier = last element, which has lowest cost)
             frontier.insert(frontier.begin()+child_insert_position, children.at(i));
-            for (int j = 0; j < children_vector_tie_indices.size(); ++j) {
+            for (unsigned j = 0; j < children_vector_tie_indices.size(); ++j) {
                 unsigned tie_children_index = children_vector_tie_indices.at(j);
                 unsigned tie_graph_index = children.at(tie_children_index);
                 frontier.insert(frontier.begin()+child_insert_position, tie_graph_index);
@@ -628,7 +630,7 @@ node A_STAR(std::vector<node> graph, unsigned start_index, unsigned goal_index) 
             if (primitive_test) {
                 std::cout << "Frontier after adding child "
                           << graph.at(children.at(i)).getState() << " and ties: ";
-                for (int j = 0; j < frontier.size(); ++j) {
+                for (unsigned j = 0; j < frontier.size(); ++j) {
                     std::cout << graph.at(frontier.at(j)).getState() << " ";
                 }
                 std::cout << std::endl;
@@ -636,7 +638,7 @@ node A_STAR(std::vector<node> graph, unsigned start_index, unsigned goal_index) 
 
             // Delete the children that tied from the children vector, so they aren't
             // added a second time
-            for (int j = 0; j < children_vector_tie_indices.size(); ++j) {
+            for (unsigned j = 0; j < children_vector_tie_indices.size(); ++j) {
                 children.erase(children.begin()+children_vector_tie_indices.at(j));
             }
         }
@@ -664,7 +666,7 @@ node getSolution(std::vector<node> graph,
 
 int main() {
     /* First collect all data from input.txt */
-    std::string const input_filename = "input.txt";
+    const std::string input_filename = "input.txt";
     std::ifstream ifs(input_filename, std::ios::in);
 
     if (ifs.fail()) {
@@ -688,7 +690,7 @@ int main() {
 
     // Create vector containing all the live traffic data (graph edges)
     std::vector<edge> live_traffic_data;
-    for (int i = 0; i < live_lines; ++i) {
+    for (unsigned i = 0; i < live_lines; ++i) {
         std::string line;
         std::getline(ifs, line);
         line = delTrailingWhitespace(line);
@@ -712,7 +714,7 @@ int main() {
 
     // Create vector containing all the sunday traffic data
     std::vector<heuristic_data> sunday_traffic_data;
-    for (int i = 0; i < sunday_lines; ++i) {
+    for (unsigned i = 0; i < sunday_lines; ++i) {
         std::string line;
         std::getline(ifs, line);
         line = delTrailingWhitespace(line);
@@ -730,14 +732,14 @@ int main() {
     // Test that the data was read correctly
     if (primitive_test) {
         std::cout << "Edges: " << std::endl;
-        for (int i = 0; i < live_traffic_data.size(); ++i) {
+        for (unsigned i = 0; i < live_traffic_data.size(); ++i) {
             std::cout << "From " << live_traffic_data.at(i).start_state
                       << " to " << live_traffic_data.at(i).end_state
                       << " with cost " << live_traffic_data.at(i).cost
                       << std::endl;
         }
         std::cout << "Heuristics: " << std::endl;
-        for (int i = 0; i < sunday_traffic_data.size(); ++i) {
+        for (unsigned i = 0; i < sunday_traffic_data.size(); ++i) {
             std::cout << "Heuristic of state " << sunday_traffic_data.at(i).state
                       << " is " << sunday_traffic_data.at(i).value << std::endl;
         }
@@ -750,13 +752,13 @@ int main() {
     /* Generate the graph using all the provided data */
     // First all nodes that have edges leading away from them
     std::vector<node> graph;
-    for (int i = 0; i < live_traffic_data.size(); ++i) {
+    for (unsigned i = 0; i < live_traffic_data.size(); ++i) {
         const std::string node_state = live_traffic_data.at(i).start_state;
 
         // Does a node at the start of this edge already exist?
         bool node_already_exists = false;
         int existing_node_index = -1;
-        for (int j = 0; j < graph.size(); ++j) {
+        for (unsigned j = 0; j < graph.size(); ++j) {
             if (graph.at(j).getState() == node_state) {
                 node_already_exists = true;
                 existing_node_index = j;
@@ -775,12 +777,12 @@ int main() {
         }
     }
     // Now go through and add the node(s) that only exist at the ends of edges, if any
-    for (int i = 0; i < live_traffic_data.size(); ++i) {
+    for (unsigned i = 0; i < live_traffic_data.size(); ++i) {
         const std::string node_state = live_traffic_data.at(i).end_state;
 
         // Does the node at the end of this edge already exist?
         bool node_already_exists = false;
-        for (int j = 0; j < graph.size(); ++j) {
+        for (unsigned j = 0; j < graph.size(); ++j) {
             if (graph.at(j).getState() == node_state) {
                 node_already_exists = true;
             }
@@ -797,7 +799,7 @@ int main() {
     // Test that the graph is constructed correctly
     if (primitive_test) {
         std::cout << "Graph vector: " << std::endl;
-        for (int i = 0; i < graph.size(); ++i) {
+        for (unsigned i = 0; i < graph.size(); ++i) {
             std::cout << "Node: " << graph.at(i).getState()
                       << ", Heuristic: " << graph.at(i).getHeuristic() << std::endl;
 
@@ -805,7 +807,7 @@ int main() {
 
             unsigned edgeCount = graph.at(i).getEdgeCount();
             if (edgeCount > 0) {
-                for (int j = 0; j < graph.at(i).getEdgeCount(); ++j) {
+                for (unsigned j = 0; j < graph.at(i).getEdgeCount(); ++j) {
                     std::cout << "From " << graph.at(i).getEdge(j).start_state
                               << " to " << graph.at(i).getEdge(j).end_state
                               << " with cost " << graph.at(i).getEdge(j).cost
@@ -835,7 +837,7 @@ int main() {
                   << " using " << algo << std::endl;
 
         std::cout << "Solution path is: " << std::endl;
-        for (int i = 0; i < solution.getPathSize(); ++i) {
+        for (unsigned i = 0; i < solution.getPathSize(); ++i) {
             std::cout << solution.getPathMember(i)
                       << " reached with total cost "
                       << solution.getCostsMember(i) << std::endl;
@@ -843,12 +845,12 @@ int main() {
     }
 
     /* Output the solution to output.txt */
-    std::string const output_filename = "output.txt";
+    const std::string output_filename = "output.txt";
     std::ofstream ofs(output_filename, std::ios::out);
 
-    for (int i = 0; i < solution.getPathSize(); ++i) {
+    for (unsigned i = 0; i < solution.getPathSize(); ++i) {
         ofs << solution.getPathMember(i) << " "
-            << solution.getCostsMember(i) << std::endl;
+            << solution.getCostsMember(i) << " " << std::endl;
     }
 
     ofs.close();
